@@ -1,3 +1,2 @@
-Open firefox
-Open wordprocessor
-Open a browser
+(Apri | Avvia | Lancia) {program}
+
