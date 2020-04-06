@@ -11,25 +11,73 @@ class OpenPrograms(MycroftSkill):
     def initialize(self):
         pass
 
+    def _common_open_program(self, *programs_list):
+        """
+        Launche the first available program
+        """
+        if not programs_list:
+            raise ValueError("Why an empty list here?!?")
+        for program in programs_list:
+            try:
+                proc = subprocess.Popen([program])
+                self.log.info("Launched PID " + str(proc.pid))
+                self.speak_dialog('programs.open', {'program' : program})
+                return
+            except FileNotFoundError:
+                pass
+        self.speak_dialog('programs.open.notfound', {'program' : programs_list[0]})
+        # TODO maybe the user wants some program of the same kind...
+
+    def _common_open_url(self, url):
+        subprocess.run(["xdg-open", url], check=True)
+        self.speak_dialog('programs.open')
+
     @intent_file_handler('programs.open.intent')
-    def handle_programs_open(self, message):
+    def handle_open_program(self, message):
         """
         This whould work with a few programs, such as Firefox and Thunderbird
         """
         program = message.data.get('program')
-        try:
-            proc = subprocess.Popen([program])
-            self.log.info("Running PID:" + str(proc.pid))
-        except FileNotFoundError:
-            self.speak_dialog('programs.open.notfound', {'program' : program})
-            return
-        self.speak_dialog('programs.open', {'program' : program})
+        self._common_open_program(program)
+
+############# Common programs ######################################################
+
+    @intent_file_handler('programs.open.chrome.intent')
+    def handle_open_chrome(self, message):
+        """
+        'Google Chrome' is not equal to its binary 'chromium'
+        Moreover, there are two different binaries, either 'chrome' or 'chromium'
+        """
+        self._common_open_program("chromium", "chrome", "google-chrome")
 
     @intent_file_handler('programs.open.browser.intent')
     def handle_open_browser(self, message):
-        search_engine = self.settings.get('search_engine', "http://www.duckduckgo.com")
-        subprocess.run(["xdg-open", search_engine], check=True)
-        self.speak_dialog('programs.open')
+        search_engine = self.settings.get('search_engine', "https://duckduckgo.com")
+        self._common_open_url(search_engine)
+
+############# Common websites... many more exist, unluckily... ####################
+
+    @intent_file_handler('programs.open.google.intent')
+    def handle_open_google(self, message):
+        self._common_open_url("https://www.google.com")
+
+    @intent_file_handler('programs.open.youtube.intent')
+    def handle_open_youtube(self, message):
+        self._common_open_url("https://www.youtube.com")
+
+    @intent_file_handler('programs.open.duckduck.intent')
+    def handle_open_duckduck(self, message):
+        self._common_open_url("https://duckduckgo.com")
+
+    @intent_file_handler('programs.open.stackoverflow.intent')
+    def handle_open_stackoverflow(self, message):
+        self._common_open_url("https://www.stackoverflow.com")
+
+    @intent_file_handler('programs.open.mycrofthome.intent')
+    def handle_open_mycroft_home(self, message):
+        self._common_open_url("https://home.mycroft.ai")
+
+################################################################################
 
     def stop(self):
         # should close active program ?!?
