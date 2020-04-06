@@ -16,15 +16,17 @@ class OpenPrograms(MycroftSkill):
         """
         This whould work with a few programs, such as Firefox and Thunderbird
         """
-        name = message.data.get('program')
+        program = message.data.get('program')
         try:
-            subprocess.run([program])
-            self.speak_dialog('programs.open', {'program' : program})
-        except:
+            proc = subprocess.Popen([program])
+            self.log.info("Running PID:" + str(proc.pid))
+        except FileNotFoundError:
             self.speak_dialog('programs.open.notfound', {'program' : program})
+            return
+        self.speak_dialog('programs.open', {'program' : program})
 
     @intent_file_handler('programs.open.browser.intent')
-    def handle_programs_open(self, message):
+    def handle_open_browser(self, message):
         search_engine = self.settings.get('search_engine', "http://www.duckduckgo.com")
         subprocess.run(["xdg-open", search_engine], check=True)
         self.speak_dialog('programs.open')

@@ -5,7 +5,7 @@ skillMetadata:
       fields:
         - name: search_engine
           type: text
-          label: Setting Friendly Display Name
+          label: Favourite search engine
           value: "https://duckduckgo.com"
           placeholder: type URL of your favourite search engine
 #    - name: Login << Name of another section
