@@ -8,6 +8,9 @@ class OpenPrograms(MycroftSkill):
     def __init__(self):
         MycroftSkill.__init__(self)
 
+    def initialize(self):
+        pass
+
     @intent_file_handler('programs.open.intent')
     def handle_programs_open(self, message):
         """
@@ -22,7 +25,8 @@ class OpenPrograms(MycroftSkill):
 
     @intent_file_handler('programs.open.browser.intent')
     def handle_programs_open(self, message):
-        subprocess.run(["xdg-open", SEARCH_ENGINE], check=True)
+        search_engine = self.settings.get('search_engine', "http://www.duckduckgo.com")
+        subprocess.run(["xdg-open", search_engine], check=True)
         self.speak_dialog('programs.open')
 
     def stop(self):
