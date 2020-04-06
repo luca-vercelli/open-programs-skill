@@ -13,17 +13,18 @@ class OpenPrograms(MycroftSkill):
 
     def _common_open_program(self, *programs_list):
         """
-        Launche the first available program
+        Launch the first available program
         """
         if not programs_list:
             raise ValueError("Why an empty list here?!?")
         for program in programs_list:
             try:
-                proc = subprocess.Popen([program])
+                proc = subprocess.Popen(program.split(" "))
                 self.log.info("Launched PID " + str(proc.pid))
                 self.speak_dialog('programs.open', {'program' : program})
                 return
             except FileNotFoundError:
+                self.log.info("Not found: " + str(program))
                 pass
         self.speak_dialog('programs.open.notfound', {'program' : programs_list[0]})
         # TODO maybe the user wants some program of the same kind...
@@ -32,6 +33,8 @@ class OpenPrograms(MycroftSkill):
         subprocess.run(["xdg-open", url], check=True)
         self.speak_dialog('programs.open')
 
+############# Common programs ######################################################
+
     @intent_file_handler('programs.open.intent')
     def handle_open_program(self, message):
         """
@@ -39,8 +42,6 @@ class OpenPrograms(MycroftSkill):
         """
         program = message.data.get('program')
         self._common_open_program(program)
-
-############# Common programs ######################################################
 
     @intent_file_handler('programs.open.chrome.intent')
     def handle_open_chrome(self, message):
@@ -54,6 +55,11 @@ class OpenPrograms(MycroftSkill):
     def handle_open_browser(self, message):
         search_engine = self.settings.get('search_engine', "https://duckduckgo.com")
         self._common_open_url(search_engine)
+
+    @intent_file_handler('programs.open.wordprocessor.intent')
+    def handle_open_word(self, message):
+        # no way to use xdg-utils ? 
+        self._common_open_program("oowriter", "libreoffice --writer", "abiword", "word")
 
 ############# Common websites... many more exist, unluckily... ####################
 
