@@ -11,7 +11,19 @@ class OpenPrograms(MycroftSkill):
         MycroftSkill.__init__(self)
 
     def initialize(self):
-        pass
+        # in different language, the "well known programs" could be different!
+        # you need 1 .voc file per each
+        self.wnb = self.translate_list('well.known.binaries')
+        for binary in self.wnb:
+            intent = IntentBuilder('open') \
+                               .require('open') \
+                               .require(binary) \
+                               .build()  # search for <binary>.voc  (does it?)
+            def handler(itself, message):
+                message.data.set('binary', binary)
+                self.log.info("HERE handler()")
+                itself.handle_open_program(message)
+            debug = self.register_intent(intent, handler)
 
 #    def load_programs_db(self):
 #        filename = self.find_resource('programs', 'resources')
@@ -53,7 +65,7 @@ class OpenPrograms(MycroftSkill):
         Return desktop file
         """
         desktop_file = self.get_desktop_file_for_mimetype(mimetype)
-        subprocess.run(["gtk-launch", desktop_file])			# FIXME this is GNOME-specific
+        subprocess.run(["gtk-launch", desktop_file])            # FIXME this is GNOME-specific
         return desktop_file
 
     def open_binary(self, binary):
@@ -84,7 +96,7 @@ class OpenPrograms(MycroftSkill):
 
     def open_app_for_mimetype_then_speak(self, mimetype):
         desktop_file = self.open_app_for_mimetype(mimetype)
-        app = desktop_file[:-8]						# FIXME this is not always true
+        app = desktop_file[:-8]                        # FIXME this is not always true
         self.speak_dialog('programs.open', {'program' : app})
         # TODO app may be None
 
@@ -104,24 +116,14 @@ class OpenPrograms(MycroftSkill):
 ############# Common programs ######################################################
 
     @intent_file_handler('open.binary.intent')
-#    @intent_handler(IntentBuilder('open')
-#                   .require('open')
-#                   .one_of('firefox','thunderbird', 'chrome', 'chromium'))
     def handle_open_program(self, message):
         """
         This whould work with a few programs, such as Firefox, Thunderbird, VLC
         """
+        self.log.info("HERE handle_open_program()")
         binary = message.data.get('binary')
         self.log.info("binary=" + str(message.data))
         self.open_binary_then_speak(binary)
-
-#    @intent_file_handler('programs.open.chrome.intent')
-    def handle_open_chrome(self, message):
-        """
-        'Google Chrome' is not equal to its binary 'chromium'
-        Moreover, there are two different binaries, either 'chrome' or 'chromium'
-        """
-        self._common_open_program("chromium", "chrome", "google-chrome")
 
     @intent_file_handler('open.browser.intent')
     def handle_open_browser(self, message):
@@ -131,6 +133,15 @@ class OpenPrograms(MycroftSkill):
     @intent_file_handler('open.wordprocessor.intent')
     def handle_open_word(self, message):
         self.open_app_for_mimetype_then_speak("application/msword")
+
+    @intent_file_handler('open.editor.intent')
+    def handle_open_editor(self, message):
+        self.open_app_for_mimetype_then_speak("text/plain")
+
+    @intent_file_handler('open.calculator.intent')
+    def handle_open_calculator(self, message):
+        self.open_binary_then_speak("gnome-calculator")		# FIXKE this is GNOME-specific
+
 
 ############# Common websites... many more exist, unluckily... ####################
 
@@ -159,6 +170,9 @@ class OpenPrograms(MycroftSkill):
     def stop(self):
         # should close active program ?!?
         pass
+
+    def converse(self, utterance, lang):
+        self.log.info("HERE converse() lang="+str(lang))
 
 def create_skill():
     return OpenPrograms()
