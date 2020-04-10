@@ -4,7 +4,6 @@ from mycroft.skills.context import adds_context, removes_context
 
 import subprocess
 
-SEARCH_ENGINE = "http://www.duckduckgo.com"
 
 class OpenPrograms(MycroftSkill):
     def __init__(self):
@@ -14,16 +13,19 @@ class OpenPrograms(MycroftSkill):
         # in different language, the "well known programs" could be different!
         # you need 1 .voc file per each
         self.wnb = self.translate_list('well.known.binaries')
+        def create_handler(binary):
+            def _f(message):
+                message.data['binary'] = binary
+                self.log.info("HERE handler() binary=" + binary)
+                self.handle_open_program(message)
+            return _f
         for binary in self.wnb:
-            intent = IntentBuilder('open') \
+            intent = IntentBuilder('open-' + binary) \
                                .require('open') \
-                               .require(binary) \
-                               .build()  # search for <binary>.voc  (does it?)
-            def handler(itself, message):
-                message.data.set('binary', binary)
-                self.log.info("HERE handler()")
-                itself.handle_open_program(message)
-            debug = self.register_intent(intent, handler)
+                               .require('bin.' + binary) \
+                               .build()  # search for bin.<binary>.voc  (does it?)
+            self.register_intent(intent, create_handler(binary))
+
 
 #    def load_programs_db(self):
 #        filename = self.find_resource('programs', 'resources')
@@ -111,7 +113,7 @@ class OpenPrograms(MycroftSkill):
         except Exception as e:
             self.log.exception(e)
             self.speak_dialog('programs.open.error', {'program' : binary})
-        # TODO alternative prorgram?
+        # TODO alternative program?
 
 ############# Common programs ######################################################
 
@@ -119,6 +121,7 @@ class OpenPrograms(MycroftSkill):
     def handle_open_program(self, message):
         """
         This whould work with a few programs, such as Firefox, Thunderbird, VLC
+        The same handler should work for opening documents too! xdg-open is the same
         """
         self.log.info("HERE handle_open_program()")
         binary = message.data.get('binary')
@@ -134,13 +137,25 @@ class OpenPrograms(MycroftSkill):
     def handle_open_word(self, message):
         self.open_app_for_mimetype_then_speak("application/msword")
 
+    @intent_file_handler('open.spreadsheet.intent')
+    def handle_open_word(self, message):
+        self.open_app_for_mimetype_then_speak("application/msexcel")
+
     @intent_file_handler('open.editor.intent')
     def handle_open_editor(self, message):
         self.open_app_for_mimetype_then_speak("text/plain")
 
+    @intent_file_handler('open.imageprocessor.intent')
+    def handle_open_word(self, message):
+        self.open_binary_then_speak("gimp")		# FIXME too specific
+
+    @intent_file_handler('open.audioprocessor.intent')
+    def handle_open_word(self, message):
+        self.open_binary_then_speak("audacity")		# FIXME too specific
+
     @intent_file_handler('open.calculator.intent')
     def handle_open_calculator(self, message):
-        self.open_binary_then_speak("gnome-calculator")		# FIXKE this is GNOME-specific
+        self.open_binary_then_speak("gnome-calculator")		# FIXME too specific
 
 
 ############# Common websites... many more exist, unluckily... ####################
@@ -173,6 +188,10 @@ class OpenPrograms(MycroftSkill):
 
     def converse(self, utterance, lang):
         self.log.info("HERE converse() lang="+str(lang))
+        # TODO should check if utterance matches "open xxx", and if
+        # either xxx is an installed binary or is a well known program
+        # if not, return False
+        return False
 
 def create_skill():
     return OpenPrograms()
